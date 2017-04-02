@@ -1,20 +1,63 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var lib = require('./lib.js')
-var layout = lib.layout_pointy
+var HashMap = require('hashmap/hashmap.js')
 
-var graphics = 5;
+var graphics = new PIXI.Graphics();
 
 
-function drawTile(){
-  corners = lib.polygon_corners(layout,lib.Hex(0,0,0));
-  console.log(corners);
+// layout of the map
+var size = lib.Point(30,30);
+var origin = lib.Point(350,300);
+var layout_p = lib.Layout(lib.layout_pointy,size,origin);
+
+var lineColor = 0x67d5ff;
+var tileColor = 0x37526f;
+
+function drawTile(layout, hex, linecolor, fillcolor){
+  graphics.lineStyle(2, linecolor, 1);
+
+  corners = lib.polygon_corners(layout,hex);
+  c0 = corners[0];
+
+  graphics.beginFill(fillcolor);
+  graphics.moveTo(c0.x,c0.y);
+  for (var i = 1; i < corners.length; i++){
+    var c = corners[i];
+    graphics.lineTo(c.x,c.y);
+  }
+
+  graphics.lineTo(c0.x,c0.y);
+  graphics.endFill();
 };
 
+function generateHexagonMap(size){
+  map = new HashMap();
+  for (var q = -size; q <= size; q++) {
+    var r1 = Math.max(-size, -q - size);
+    var r2 = Math.min(size, -q + size);
+    for (var r = r1; r <= r2; r++) {
+        map.set([q,r],  0);
+    }
+  }
 
+  var a = map.remove([3,0]);
+  return map;
+}
+
+function drawHexagonMap(map){
+  map.forEach(function(value, key) {
+      var hex = lib.Hex(key[0],key[1],-key[0]-key[1]);
+      drawTile(layout_p, hex, lineColor, tileColor );
+  });
+}
+
+var hex_map = generateHexagonMap(5);
+drawHexagonMap(hex_map);
 
 exports.graphics = graphics;
+exports.game_map = hex_map;
 
-},{"./lib.js":2}],2:[function(require,module,exports){
+},{"./lib.js":2,"hashmap/hashmap.js":4}],2:[function(require,module,exports){
 // Generated code -- http://www.redblobgames.com/grids/hexagons/
 "use strict";
 
@@ -212,8 +255,6 @@ function polygon_corners(layout, h)
     return corners;
 }
 
-
-
 // Exports for node/browserify modules:
 
 exports.Point = Point;
@@ -257,6 +298,200 @@ var bg = require('./backgrounds.js')
 var app = new PIXI.Application(800, 600, { antialias: true });
 document.body.appendChild(app.view);
 
-console.log(bg.graphics)
+app.stage.addChild(bg.graphics);
 
-},{"./backgrounds.js":1}]},{},[1,2,3]);
+var game_map = bg.game_map;
+
+},{"./backgrounds.js":1}],4:[function(require,module,exports){
+/**
+ * HashMap - HashMap Class for JavaScript
+ * @author Ariel Flesler <aflesler@gmail.com>
+ * @version 2.0.6
+ * Homepage: https://github.com/flesler/hashmap
+ */
+
+(function(factory) {
+	/* global define */
+	if (typeof define === 'function' && define.amd) {
+		// AMD. Register as an anonymous module.
+		define([], factory);
+	} else if (typeof module === 'object') {
+		// Node js environment
+		var HashMap = module.exports = factory();
+		// Keep it backwards compatible
+		HashMap.HashMap = HashMap;
+	} else {
+		// Browser globals (this is window)
+		this.HashMap = factory();
+	}
+}(function() {
+
+	function HashMap(other) {
+		this.clear();
+		switch (arguments.length) {
+			case 0: break;
+			case 1: this.copy(other); break;
+			default: multi(this, arguments); break;
+		}
+	}
+
+	var proto = HashMap.prototype = {
+		constructor:HashMap,
+
+		get:function(key) {
+			var data = this._data[this.hash(key)];
+			return data && data[1];
+		},
+
+		set:function(key, value) {
+			// Store original key as well (for iteration)
+			var hash = this.hash(key);
+			if ( !(hash in this._data) ) {
+				this._count++;
+			}
+			this._data[hash] = [key, value];
+		},
+
+		multi:function() {
+			multi(this, arguments);
+		},
+
+		copy:function(other) {
+			for (var hash in other._data) {
+				if ( !(hash in this._data) ) {
+					this._count++;
+				}
+				this._data[hash] = other._data[hash];
+			}
+		},
+
+		has:function(key) {
+			return this.hash(key) in this._data;
+		},
+
+		search:function(value) {
+			for (var key in this._data) {
+				if (this._data[key][1] === value) {
+					return this._data[key][0];
+				}
+			}
+
+			return null;
+		},
+
+		remove:function(key) {
+			var hash = this.hash(key);
+			if ( hash in this._data ) {
+				this._count--;
+				delete this._data[hash];
+			}
+		},
+
+		type:function(key) {
+			var str = Object.prototype.toString.call(key);
+			var type = str.slice(8, -1).toLowerCase();
+			// Some browsers yield DOMWindow for null and undefined, works fine on Node
+			if (type === 'domwindow' && !key) {
+				return key + '';
+			}
+			return type;
+		},
+
+		keys:function() {
+			var keys = [];
+			this.forEach(function(_, key) { keys.push(key); });
+			return keys;
+		},
+
+		values:function() {
+			var values = [];
+			this.forEach(function(value) { values.push(value); });
+			return values;
+		},
+
+		count:function() {
+			return this._count;
+		},
+
+		clear:function() {
+			// TODO: Would Object.create(null) make any difference
+			this._data = {};
+			this._count = 0;
+		},
+
+		clone:function() {
+			return new HashMap(this);
+		},
+
+		hash:function(key) {
+			switch (this.type(key)) {
+				case 'undefined':
+				case 'null':
+				case 'boolean':
+				case 'number':
+				case 'regexp':
+					return key + '';
+
+				case 'date':
+					return '♣' + key.getTime();
+
+				case 'string':
+					return '♠' + key;
+
+				case 'array':
+					var hashes = [];
+					for (var i = 0; i < key.length; i++) {
+						hashes[i] = this.hash(key[i]);
+					}
+					return '♥' + hashes.join('⁞');
+
+				default:
+					// TODO: Don't use expandos when Object.defineProperty is not available?
+					if (!key.hasOwnProperty('_hmuid_')) {
+						key._hmuid_ = ++HashMap.uid;
+						hide(key, '_hmuid_');
+					}
+
+					return '♦' + key._hmuid_;
+			}
+		},
+
+		forEach:function(func, ctx) {
+			for (var key in this._data) {
+				var data = this._data[key];
+				func.call(ctx || this, data[1], data[0]);
+			}
+		}
+	};
+
+	HashMap.uid = 0;
+
+	//- Add chaining to all methods that don't return something
+
+	['set','multi','copy','remove','clear','forEach'].forEach(function(method) {
+		var fn = proto[method];
+		proto[method] = function() {
+			fn.apply(this, arguments);
+			return this;
+		};
+	});
+
+	//- Utils
+
+	function multi(map, args) {
+		for (var i = 0; i < args.length; i += 2) {
+			map.set(args[i], args[i+1]);
+		}
+	}
+
+	function hide(obj, prop) {
+		// Make non iterable if supported
+		if (Object.defineProperty) {
+			Object.defineProperty(obj, prop, {enumerable:false});
+		}
+	}
+
+	return HashMap;
+}));
+
+},{}]},{},[1,2,3]);

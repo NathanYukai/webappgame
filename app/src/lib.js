@@ -195,8 +195,6 @@ function polygon_corners(layout, h)
     return corners;
 }
 
-
-
 // Exports for node/browserify modules:
 
 exports.Point = Point;

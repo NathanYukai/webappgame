@@ -7,7 +7,7 @@ module.exports = function(grunt) {
     watch:{
       scripts:{
         files:['app/src/**/*.js'],
-        tasks:['browserify','uglify']
+        tasks:['browserify']
       },
     },
     browserify:{
@@ -27,7 +27,6 @@ module.exports = function(grunt) {
 
   });
 
-  grunt.loadNpmTasks('grunt-ts');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-browserify');
