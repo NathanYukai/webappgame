@@ -1,0 +1,1 @@
+app\src\main.ts --sourcemap --removeComments --target ES5 --out app/static/jsbuild.min.js

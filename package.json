@@ -1,0 +1,18 @@
+{
+  "name": "gameyukaijinyi",
+  "version": "0.0.1",
+  "description": "yoyoyo,what a great game",
+  "main": "run.py",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "yukai, jinyi",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/pixi.js": "^4.4.2",
+    "grunt": "^0.4.5",
+    "grunt-browserify": "^5.0.0",
+    "grunt-contrib-uglify": "~0.5.0",
+    "grunt-contrib-watch": "^1.0.0"
+  }
+}
