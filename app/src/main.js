@@ -1,8 +1,14 @@
-var bg = require('./backgrounds.js')
+var bg = require('./backgrounds');
+var charactor = require('./charactor');
+var lib = require('./lib');
+var app = bg.app;
 
-var app = new PIXI.Application(800, 600, { antialias: true });
 document.body.appendChild(app.view);
 
-app.stage.addChild(bg.graphics);
+var gameMap = bg.generateHexagonMap(5);
+app.stage.addChild(bg.drawMap(gameMap));
 
-var game_map = bg.game_map;
+var knightSprites = 'static/sprites/knight.png';
+
+var knight = charactor.createCharactor(knightSprites,lib.Hex(0 ,0,-1),gameMap);
+app.stage.addChild(knight);

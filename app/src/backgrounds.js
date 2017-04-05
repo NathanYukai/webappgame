@@ -1,18 +1,19 @@
-var lib = require('./lib.js')
-var HashMap = require('hashmap/hashmap.js')
+var lib = require('./lib');
+var HashMap = require('hashmap/hashmap');
+var bgEnum = require('./enums').bgEnum;
 
-var graphics = new PIXI.Graphics();
-
+//initialise the app
+var app = new PIXI.Application(800, 600, { antialias: true });
 
 // layout of the map
-var size = lib.Point(30,30);
+var tileSize = lib.Point(30,30);
 var origin = lib.Point(350,300);
-var layout_p = lib.Layout(lib.layout_pointy,size,origin);
+var layout_p = lib.Layout(lib.layout_pointy,tileSize,origin);
 
 var lineColor = 0x67d5ff;
 var tileColor = 0x37526f;
 
-function drawTile(layout, hex, linecolor, fillcolor){
+function drawTile(graphics, layout, hex, linecolor, fillcolor){
   graphics.lineStyle(2, linecolor, 1);
 
   corners = lib.polygon_corners(layout,hex);
@@ -35,23 +36,51 @@ function generateHexagonMap(size){
     var r1 = Math.max(-size, -q - size);
     var r2 = Math.min(size, -q + size);
     for (var r = r1; r <= r2; r++) {
-        map.set([q,r],  0);
+        map.set([q,r], bgEnum.EMPTY);
     }
   }
 
-  var a = map.remove([3,0]);
+  for (var i = 0; i <8; i++){
+    var randKey = map.keys()[Math.floor(Math.random()*map.count())];
+    map.set(randKey,bgEnum.BLOCKED);
+  }
+  for (var i = 0; i <5; i++){
+    var randKey = map.keys()[Math.floor(Math.random()*map.count())];
+    map.set(randKey,bgEnum.SLOW_1);
+  }
   return map;
 }
 
-function drawHexagonMap(map){
+function drawMap(map){
+
+  var graphics = new PIXI.Graphics();
+
   map.forEach(function(value, key) {
       var hex = lib.Hex(key[0],key[1],-key[0]-key[1]);
-      drawTile(layout_p, hex, lineColor, tileColor );
-  });
+      if(map.get(key) == bgEnum.EMPTY ){
+        drawTile(graphics, layout_p, hex, lineColor, tileColor );
+      }else if(map.get(key) == bgEnum.BLOCKED){
+        drawTile(graphics, layout_p, hex, tileColor, lineColor );
+      }else{
+        drawTile(graphics, layout_p, hex, 0xeff75b, 0xeff75b );
+      }
+  })
+  return graphics;
 }
 
-var hex_map = generateHexagonMap(5);
-drawHexagonMap(hex_map);
 
-exports.graphics = graphics;
-exports.game_map = hex_map;
+function drawRange(graphics, range, lineColor, fillColor){
+  for (var i=0; i < range.length; i++){
+    var pos = range[i];
+    var hex = lib.Hex(pos[0],pos[1],pos[0]-pos[1]);
+    drawTile(graphics,layout_p,hex,lineColor,fillColor);
+  }
+}
+
+exports.layout_p = layout_p;
+exports.drawTile = drawTile;
+exports.drawMap = drawMap;
+exports.generateHexagonMap = generateHexagonMap;
+exports.tileSize = tileSize;
+exports.app = app;
+exports.drawRange = drawRange;

@@ -1,19 +1,20 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var lib = require('./lib.js')
-var HashMap = require('hashmap/hashmap.js')
+var lib = require('./lib');
+var HashMap = require('hashmap/hashmap');
+var bgEnum = require('./enums').bgEnum;
 
-var graphics = new PIXI.Graphics();
-
+//initialise the app
+var app = new PIXI.Application(800, 600, { antialias: true });
 
 // layout of the map
-var size = lib.Point(30,30);
+var tileSize = lib.Point(30,30);
 var origin = lib.Point(350,300);
-var layout_p = lib.Layout(lib.layout_pointy,size,origin);
+var layout_p = lib.Layout(lib.layout_pointy,tileSize,origin);
 
 var lineColor = 0x67d5ff;
 var tileColor = 0x37526f;
 
-function drawTile(layout, hex, linecolor, fillcolor){
+function drawTile(graphics, layout, hex, linecolor, fillcolor){
   graphics.lineStyle(2, linecolor, 1);
 
   corners = lib.polygon_corners(layout,hex);
@@ -36,28 +37,144 @@ function generateHexagonMap(size){
     var r1 = Math.max(-size, -q - size);
     var r2 = Math.min(size, -q + size);
     for (var r = r1; r <= r2; r++) {
-        map.set([q,r],  0);
+        map.set([q,r], bgEnum.EMPTY);
     }
   }
 
-  var a = map.remove([3,0]);
+  for (var i = 0; i <8; i++){
+    var randKey = map.keys()[Math.floor(Math.random()*map.count())];
+    map.set(randKey,bgEnum.BLOCKED);
+  }
+  for (var i = 0; i <5; i++){
+    var randKey = map.keys()[Math.floor(Math.random()*map.count())];
+    map.set(randKey,bgEnum.SLOW_1);
+  }
   return map;
 }
 
-function drawHexagonMap(map){
+function drawMap(map){
+
+  var graphics = new PIXI.Graphics();
+
   map.forEach(function(value, key) {
       var hex = lib.Hex(key[0],key[1],-key[0]-key[1]);
-      drawTile(layout_p, hex, lineColor, tileColor );
-  });
+      if(map.get(key) == bgEnum.EMPTY ){
+        drawTile(graphics, layout_p, hex, lineColor, tileColor );
+      }else if(map.get(key) == bgEnum.BLOCKED){
+        drawTile(graphics, layout_p, hex, tileColor, lineColor );
+      }else{
+        drawTile(graphics, layout_p, hex, 0xeff75b, 0xeff75b );
+      }
+  })
+  return graphics;
 }
 
-var hex_map = generateHexagonMap(5);
-drawHexagonMap(hex_map);
 
-exports.graphics = graphics;
-exports.game_map = hex_map;
+function drawRange(graphics, range, lineColor, fillColor){
+  for (var i=0; i < range.length; i++){
+    var pos = range[i];
+    var hex = lib.Hex(pos[0],pos[1],pos[0]-pos[1]);
+    drawTile(graphics,layout_p,hex,lineColor,fillColor);
+  }
+}
 
-},{"./lib.js":2,"hashmap/hashmap.js":4}],2:[function(require,module,exports){
+exports.layout_p = layout_p;
+exports.drawTile = drawTile;
+exports.drawMap = drawMap;
+exports.generateHexagonMap = generateHexagonMap;
+exports.tileSize = tileSize;
+exports.app = app;
+exports.drawRange = drawRange;
+
+},{"./enums":3,"./lib":4,"hashmap/hashmap":7}],2:[function(require,module,exports){
+var lib = require('./lib');
+var bg = require('./backgrounds');
+var mov = require('./movement');
+
+//position should be hex position
+function createCharactor(imgUrl, hexPosition, gameMap){
+  var charactor = new PIXI.Sprite.fromImage(imgUrl);
+  charactor.interactive = true;
+  charactor.anchor.set(0.5,0.7);
+
+  //it's position on the game map
+  charactor.hexPos = hexPosition;
+  charactor.gameMap = gameMap;
+
+  var pixelPosition = lib.hex_to_pixel(bg.layout_p,hexPosition);
+  charactor.x = pixelPosition.x;
+  charactor.y = pixelPosition.y;
+  charactor.width = bg.tileSize.x*2;
+  charactor.height = bg.tileSize.y*2;
+
+  charactor
+    .on('pointerdown',onDragStart)
+    .on('pointerup',onDragEnd)
+    .on('pointerupoutside',onDragEnd)
+    .on('pointermove',onDragging);
+
+  //testing moverange later more info needed
+  charactor.moveLimit = 4;
+
+  return charactor;
+}
+
+
+function onDragStart(event){
+    this.data = event.data;
+    this.alpha = 0.5;
+    this.dragging = true;
+
+    //calculate place can go to
+    var costs = mov.calculateCost(this.hexPos, this.gameMap, this.moveLimit);
+    //[[q,r],...]
+    var inRange = lib.getMapKeysToArray(costs);
+    this.moveRange = inRange;
+    //draw range
+    var rangeColor = 0xb9c170;
+    var tmpGraphics = new PIXI.Graphics();
+    tmpGraphics.alpha = 0.2;
+    bg.drawRange(tmpGraphics,inRange,rangeColor,rangeColor)
+    bg.app.stage.addChild(tmpGraphics);
+    this.rangeGraphics = tmpGraphics;
+}
+
+function onDragging(){
+  if(this.dragging){
+    var newPos = this.data.getLocalPosition(this.parent);
+    var hexPos = lib.hex_round(lib.pixel_to_hex(bg.layout_p,newPos));
+    var tiledPos = lib.hex_to_pixel(bg.layout_p,hexPos);
+
+    if(lib.arrayContainArray([hexPos.q,hexPos.r], this.moveRange)){
+      this.x = tiledPos.x;
+      this.y = tiledPos.y;
+      this.hexPos = hexPos;
+    }
+  }
+}
+
+function onDragEnd(){
+  this.alpha = 1;
+  this.dragging = false;
+  this.data = null;
+  bg.app.stage.removeChild(this.rangeGraphics);
+  this.rangeGraphics = null;
+}
+
+
+
+exports.createCharactor = createCharactor;
+
+},{"./backgrounds":1,"./lib":4,"./movement":6}],3:[function(require,module,exports){
+var bgEnum = Object.freeze({
+  EMPTY:1,
+  BLOCKED:2,
+  SLOW_1:3
+})
+
+exports.bgEnum = bgEnum;
+
+},{}],4:[function(require,module,exports){
 // Generated code -- http://www.redblobgames.com/grids/hexagons/
 "use strict";
 
@@ -255,6 +372,27 @@ function polygon_corners(layout, h)
     return corners;
 }
 
+/// from yukai:
+
+function getMapKeysToArray(map){
+
+  return Object.keys(map).map(function(str){
+    return str.split(',')
+  }).map(function(a){
+    return a.map(function(i){
+      return parseInt(i)
+    })
+  })
+}
+
+
+function arrayContainArray(elem,array){
+  var a = JSON.stringify(array);
+  var b = JSON.stringify(elem);
+  var c = a.indexOf(b);
+  return c != -1;
+}
+
 // Exports for node/browserify modules:
 
 exports.Point = Point;
@@ -292,17 +430,90 @@ exports.pixel_to_hex = pixel_to_hex;
 exports.hex_corner_offset = hex_corner_offset;
 exports.polygon_corners = polygon_corners;
 
-},{}],3:[function(require,module,exports){
-var bg = require('./backgrounds.js')
+// exports
+exports.getMapKeysToArray = getMapKeysToArray;
+exports.arrayContainArray = arrayContainArray;
 
-var app = new PIXI.Application(800, 600, { antialias: true });
+},{}],5:[function(require,module,exports){
+var bg = require('./backgrounds');
+var charactor = require('./charactor');
+var lib = require('./lib');
+var app = bg.app;
+
 document.body.appendChild(app.view);
 
-app.stage.addChild(bg.graphics);
+var gameMap = bg.generateHexagonMap(5);
+app.stage.addChild(bg.drawMap(gameMap));
 
-var game_map = bg.game_map;
+var knightSprites = 'static/sprites/knight.png';
 
-},{"./backgrounds.js":1}],4:[function(require,module,exports){
+var knight = charactor.createCharactor(knightSprites,lib.Hex(0 ,0,-1),gameMap);
+app.stage.addChild(knight);
+
+},{"./backgrounds":1,"./charactor":2,"./lib":4}],6:[function(require,module,exports){
+var enums = require('./enums')
+var PriorityQueue = require('priorityqueuejs')
+var lib = require('./lib')
+
+///movement helper functions
+function moveCost(map,from, to){
+  var cost1 = enums.bgEnum.SLOW_1;
+  if((map.get([from.q,from.r])==cost1) || (map.get([to.q,to.r])==cost1) ){
+    return 1;
+  }
+  return 1;
+}
+
+//return all non-blocked neibors
+//position is hex
+function neighbors(position, map){
+  var result = [];
+  for (var i = 0; i < 6; i++){
+    var nb = lib.hex_neighbor(position,i);
+    var tiletype = map.get([nb.q,nb.r]);
+    if(( tiletype == enums.bgEnum.EMPTY) || (tiletype == enums.bgEnum.SLOW_1)){
+      result.push(nb);
+    }
+  }
+  return result;
+}
+
+//pos is lib.Hex
+// return [q,r]:cost
+function calculateCost(pos, map, limit){
+  var frontier =new PriorityQueue(function(a,b){
+    return a.priority - b.priority;
+  });
+  frontier.enq({priority:0,position:pos});
+  var cameFrom = {};
+  var costSoFar = {};
+  cameFrom[[pos.q,pos.r]] = null;
+  costSoFar[[pos.q,pos.r]] = 0;
+
+  while( !frontier.isEmpty() ){
+    var curr = frontier.deq().position;
+    var nbrs = neighbors(curr,map);
+    for (var i = 0; i < nbrs.length; i++){
+      var next = [nbrs[i].q,nbrs[i].r];
+      var newCost = costSoFar[[curr.q,curr.r]] + moveCost(map,curr,nbrs[i]);
+      if( (newCost < limit) && (! (next in costSoFar))||(newCost < costSoFar[next]) ){
+        costSoFar[next] = newCost;
+        prio = newCost;
+        frontier.enq({priority:prio,position:nbrs[i]});
+        cameFrom[next] = curr;
+      }
+    }
+  }
+
+  return costSoFar;
+
+}
+
+exports.moveCost = moveCost;
+exports.calculateCost = calculateCost;
+exports.neighbors = neighbors;
+
+},{"./enums":3,"./lib":4,"priorityqueuejs":8}],7:[function(require,module,exports){
 /**
  * HashMap - HashMap Class for JavaScript
  * @author Ariel Flesler <aflesler@gmail.com>
@@ -494,4 +705,178 @@ var game_map = bg.game_map;
 	return HashMap;
 }));
 
-},{}]},{},[1,2,3]);
+},{}],8:[function(require,module,exports){
+/**
+ * Expose `PriorityQueue`.
+ */
+module.exports = PriorityQueue;
+
+/**
+ * Initializes a new empty `PriorityQueue` with the given `comparator(a, b)`
+ * function, uses `.DEFAULT_COMPARATOR()` when no function is provided.
+ *
+ * The comparator function must return a positive number when `a > b`, 0 when
+ * `a == b` and a negative number when `a < b`.
+ *
+ * @param {Function}
+ * @return {PriorityQueue}
+ * @api public
+ */
+function PriorityQueue(comparator) {
+  this._comparator = comparator || PriorityQueue.DEFAULT_COMPARATOR;
+  this._elements = [];
+}
+
+/**
+ * Compares `a` and `b`, when `a > b` it returns a positive number, when
+ * it returns 0 and when `a < b` it returns a negative number.
+ *
+ * @param {String|Number} a
+ * @param {String|Number} b
+ * @return {Number}
+ * @api public
+ */
+PriorityQueue.DEFAULT_COMPARATOR = function(a, b) {
+  if (typeof a === 'number' && typeof b === 'number') {
+    return a - b;
+  } else {
+    a = a.toString();
+    b = b.toString();
+
+    if (a == b) return 0;
+
+    return (a > b) ? 1 : -1;
+  }
+};
+
+/**
+ * Returns whether the priority queue is empty or not.
+ *
+ * @return {Boolean}
+ * @api public
+ */
+PriorityQueue.prototype.isEmpty = function() {
+  return this.size() === 0;
+};
+
+/**
+ * Peeks at the top element of the priority queue.
+ *
+ * @return {Object}
+ * @throws {Error} when the queue is empty.
+ * @api public
+ */
+PriorityQueue.prototype.peek = function() {
+  if (this.isEmpty()) throw new Error('PriorityQueue is empty');
+
+  return this._elements[0];
+};
+
+/**
+ * Dequeues the top element of the priority queue.
+ *
+ * @return {Object}
+ * @throws {Error} when the queue is empty.
+ * @api public
+ */
+PriorityQueue.prototype.deq = function() {
+  var first = this.peek();
+  var last = this._elements.pop();
+  var size = this.size();
+
+  if (size === 0) return first;
+
+  this._elements[0] = last;
+  var current = 0;
+
+  while (current < size) {
+    var largest = current;
+    var left = (2 * current) + 1;
+    var right = (2 * current) + 2;
+
+    if (left < size && this._compare(left, largest) >= 0) {
+      largest = left;
+    }
+
+    if (right < size && this._compare(right, largest) >= 0) {
+      largest = right;
+    }
+
+    if (largest === current) break;
+
+    this._swap(largest, current);
+    current = largest;
+  }
+
+  return first;
+};
+
+/**
+ * Enqueues the `element` at the priority queue and returns its new size.
+ *
+ * @param {Object} element
+ * @return {Number}
+ * @api public
+ */
+PriorityQueue.prototype.enq = function(element) {
+  var size = this._elements.push(element);
+  var current = size - 1;
+
+  while (current > 0) {
+    var parent = Math.floor((current - 1) / 2);
+
+    if (this._compare(current, parent) <= 0) break;
+
+    this._swap(parent, current);
+    current = parent;
+  }
+
+  return size;
+};
+
+/**
+ * Returns the size of the priority queue.
+ *
+ * @return {Number}
+ * @api public
+ */
+PriorityQueue.prototype.size = function() {
+  return this._elements.length;
+};
+
+/**
+ *  Iterates over queue elements
+ *
+ *  @param {Function} fn
+ */
+PriorityQueue.prototype.forEach = function(fn) {
+  return this._elements.forEach(fn);
+};
+
+/**
+ * Compares the values at position `a` and `b` in the priority queue using its
+ * comparator function.
+ *
+ * @param {Number} a
+ * @param {Number} b
+ * @return {Number}
+ * @api private
+ */
+PriorityQueue.prototype._compare = function(a, b) {
+  return this._comparator(this._elements[a], this._elements[b]);
+};
+
+/**
+ * Swaps the values at position `a` and `b` in the priority queue.
+ *
+ * @param {Number} a
+ * @param {Number} b
+ * @api private
+ */
+PriorityQueue.prototype._swap = function(a, b) {
+  var aux = this._elements[a];
+  this._elements[a] = this._elements[b];
+  this._elements[b] = aux;
+};
+
+},{}]},{},[1,2,3,4,5,6]);

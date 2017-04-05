@@ -195,6 +195,27 @@ function polygon_corners(layout, h)
     return corners;
 }
 
+/// from yukai:
+
+function getMapKeysToArray(map){
+
+  return Object.keys(map).map(function(str){
+    return str.split(',')
+  }).map(function(a){
+    return a.map(function(i){
+      return parseInt(i)
+    })
+  })
+}
+
+
+function arrayContainArray(elem,array){
+  var a = JSON.stringify(array);
+  var b = JSON.stringify(elem);
+  var c = a.indexOf(b);
+  return c != -1;
+}
+
 // Exports for node/browserify modules:
 
 exports.Point = Point;
@@ -231,3 +252,7 @@ exports.hex_to_pixel = hex_to_pixel;
 exports.pixel_to_hex = pixel_to_hex;
 exports.hex_corner_offset = hex_corner_offset;
 exports.polygon_corners = polygon_corners;
+
+// exports
+exports.getMapKeysToArray = getMapKeysToArray;
+exports.arrayContainArray = arrayContainArray;

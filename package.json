@@ -15,6 +15,7 @@
     "grunt-contrib-watch": "^1.0.0"
   },
   "dependencies": {
-    "hashmap": "^2.0.6"
+    "hashmap": "^2.0.6",
+    "priorityqueuejs": "^1.0.0"
   }
 }
