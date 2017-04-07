@@ -28,8 +28,9 @@ function createCharactor(id, imgUrl, hexPosition, gameMap){
     .on('pointerupoutside',onDragEnd)
     .on('pointermove',onDragging);
 
-  //testing moverange later more info needed
+  //move limit
   charactor.moveLimit = 4;
+  charactor.moveLeft = charactor.moveLimit;
 
   return charactor;
 }
@@ -48,15 +49,17 @@ function onDragStart(event){
 
 
     //calculate place can go to
-    var costs = mov.calculateCost(this.hexPos, this.gameMap, this.moveLimit);
+    //return [[q,r]..]
+    var costs = mov.calculateCost(this.hexPos, this.gameMap, this.moveLeft);
     //[[q,r],...]
-    var inRange = lib.getMapKeysToArray(costs);
-    this.moveRange = inRange;
+    this.moveRange = lib.getMapKeysToArray(costs);
+    this.moveCosts = costs;
+
     //draw range
     var rangeColor = 0xb9c170;
     var tmpGraphics = new PIXI.Graphics();
     tmpGraphics.alpha = 0.2;
-    bg.drawRange(tmpGraphics,inRange,rangeColor,rangeColor)
+    bg.drawRange(tmpGraphics,this.moveRange,rangeColor,rangeColor)
     bg.app.stage.addChild(tmpGraphics);
     this.rangeGraphics = tmpGraphics;
 }
@@ -81,13 +84,8 @@ function onDragging(){
 
 function onDragEnd(){
   if(this.dragging){
-    //reset stuff
-    this.alpha = 1;
-    this.dragging = false;
-    this.data = null;
-    bg.app.stage.removeChild(this.rangeGraphics);
-    this.rangeGraphics = null;
-    this.moveRange = null;
+    this.moveLeft = Math.max(0,
+      this.moveLeft - this.moveCosts[[this.hexPos.q,this.hexPos.r]]);
 
     // update map
     //add new position
@@ -95,8 +93,25 @@ function onDragEnd(){
     this.originHexPos = null;
     var tileItems = gameMap.get([this.hexPos.q,this.hexPos.r])
     tileItems.charactor = this;
+
+
+    //draw menu
+
+
+
+    //reset stuff
+    this.alpha = 1;
+    this.dragging = false;
+    this.data = null;
+    bg.app.stage.removeChild(this.rangeGraphics);
+    this.rangeGraphics = null;
+    this.moveRange = null;
+    this.moveCosts = null;
+
   }
 }
+
+
 
 
 

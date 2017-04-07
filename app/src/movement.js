@@ -50,7 +50,7 @@ function calculateCost(pos, map, limit){
     for (var i = 0; i < nbrs.length; i++){
       var next = [nbrs[i].q,nbrs[i].r];
       var newCost = costSoFar[[curr.q,curr.r]] + moveCost(map,curr,nbrs[i]);
-      if( (newCost < limit) && (! (next in costSoFar))||(newCost < costSoFar[next]) ){
+      if( (newCost <= limit) && (! (next in costSoFar))||(newCost < costSoFar[next]) ){
         costSoFar[next] = newCost;
         prio = newCost;
         frontier.enq({priority:prio,position:nbrs[i]});

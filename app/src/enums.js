@@ -4,4 +4,10 @@ var bgEnum = Object.freeze({
   SLOW_1:3
 })
 
+var actionMenuEnum = Object.freeze({
+  ATTACK:1,
+  CANCEL:2,
+})
+
+exports.actionMenuEnum = actionMenuEnum;
 exports.bgEnum = bgEnum;
