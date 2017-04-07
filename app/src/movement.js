@@ -5,8 +5,9 @@ var lib = require('./lib')
 ///movement helper functions
 function moveCost(map,from, to){
   var cost1 = enums.bgEnum.SLOW_1;
-  if((map.get([from.q,from.r])==cost1) || (map.get([to.q,to.r])==cost1) ){
-    return 1;
+  if((map.get([from.q,from.r]).tileType == (cost1))
+    || (map.get([to.q,to.r]).tileType == (cost1)) ){
+    return 2;
   }
   return 1;
 }
@@ -17,8 +18,14 @@ function neighbors(position, map){
   var result = [];
   for (var i = 0; i < 6; i++){
     var nb = lib.hex_neighbor(position,i);
-    var tiletype = map.get([nb.q,nb.r]);
-    if(( tiletype == enums.bgEnum.EMPTY) || (tiletype == enums.bgEnum.SLOW_1)){
+    var tile = map.get([nb.q,nb.r]);
+    if(typeof tile == "undefined"){
+      continue;
+    }
+    var tileType = tile.tileType;
+    if( (tileType == (enums.bgEnum.EMPTY)
+        || (tileType == (enums.bgEnum.SLOW_1 )))
+      ){
       result.push(nb);
     }
   }
