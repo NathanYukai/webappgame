@@ -1,9 +1,10 @@
 var lib = require('./lib');
 var HashMap = require('hashmap/hashmap');
 var bgEnum = require('./enums').bgEnum;
+var canvasSize = {w:800,h:600}
 
 //initialise the app
-var app = new PIXI.Application(800, 600, { antialias: true });
+var app = new PIXI.Application(canvasSize.w, canvasSize.h, { antialias: true });
 
 // layout of the map
 var tileSize = lib.Point(30,30);
@@ -72,7 +73,7 @@ function drawMap(map){
   return graphics;
 }
 
-
+//
 function drawRange(graphics, range, lineColor, fillColor){
   for (var i=0; i < range.length; i++){
     var pos = range[i];
@@ -80,6 +81,7 @@ function drawRange(graphics, range, lineColor, fillColor){
     drawTile(graphics,layout_p,hex,lineColor,fillColor);
   }
 }
+
 
 //groundItems should not affect charactor movement
 //type should be mutual exclusive to each other
@@ -94,3 +96,4 @@ exports.generateHexagonMap = generateHexagonMap;
 exports.tileSize = tileSize;
 exports.app = app;
 exports.drawRange = drawRange;
+exports.canvasSize = canvasSize;

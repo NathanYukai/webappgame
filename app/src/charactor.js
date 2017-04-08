@@ -2,6 +2,7 @@ var lib = require('./lib');
 var bg = require('./backgrounds');
 var mov = require('./movement');
 var _ = require('underscore');
+var actionMenu = require('./actionMenu');
 
 //position should be Hex position
 function createCharactor(id, imgUrl, hexPosition, gameMap){
@@ -9,10 +10,11 @@ function createCharactor(id, imgUrl, hexPosition, gameMap){
   charactor.interactive = true;
   charactor.anchor.set(0.5,0.7);
 
-  //it's position on the game map
+  //lib Hex
   charactor.hexPos = hexPosition;
   charactor.gameMap = gameMap;
   charactor.id = id;
+  //add to map
   var tileItems = gameMap.get([hexPosition.q,hexPosition.r])
   tileItems.charactor = charactor;
 
@@ -31,6 +33,10 @@ function createCharactor(id, imgUrl, hexPosition, gameMap){
   //move limit
   charactor.moveLimit = 4;
   charactor.moveLeft = charactor.moveLimit;
+
+  //attack range
+  //[Hex]
+  charactor.attackRange = lib.hex_directions;
 
   return charactor;
 }
@@ -84,19 +90,20 @@ function onDragging(){
 
 function onDragEnd(){
   if(this.dragging){
+    var posKey = [this.hexPos.q,this.hexPos.r];
+
     this.moveLeft = Math.max(0,
-      this.moveLeft - this.moveCosts[[this.hexPos.q,this.hexPos.r]]);
+      this.moveLeft - this.moveCosts[posKey]);
 
     // update map
     //add new position
     var gameMap = this.gameMap;
     this.originHexPos = null;
-    var tileItems = gameMap.get([this.hexPos.q,this.hexPos.r])
+    var tileItems = gameMap.get(posKey)
     tileItems.charactor = this;
 
-
     //draw menu
-
+    actionMenu.createActionMenu(posKey,gameMap);
 
 
     //reset stuff
