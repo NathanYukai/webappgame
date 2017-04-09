@@ -51,8 +51,9 @@ function attackRange(){
 
 //so that hidden listener is still ready to remove all menu ,
 // including the attackrange
+// add at 1 so that it's in front of the hiddenlistener
   this.parent.addChildAt(attackTile,1);
-//remove the button
+//remove the attackMenu
   this.parent.removeChild(this);
 }
 
@@ -60,10 +61,31 @@ function attackRange(){
 // check if there is an valid target,
 // if so, do attack,
 function attackAt(event){
-  var pixPos = event.data.getLocalPosition(this.parent);
-  var hex = lib.hex_round(lib.pixel_to_hex(bg.layout_p,pixPos));
+  var rawPos = event.data.getLocalPosition(this.parent);
+  var hex = lib.hex_round(lib.pixel_to_hex(bg.layout_p,rawPos));
+  var pixPos = lib.hex_to_pixel(bg.layout_p,hex);
   //todo later
+  var frames = [];
+  for (var i = 1; i<= 27; i++){
+    frames.push(PIXI.Texture.fromFrame('Explosion_Sequence_A '+i+'.png'))
+  }
+  var explosion = new PIXI.extras.AnimatedSprite(frames);
+  explosion.x = pixPos.x;
+  explosion.y = pixPos.y;
+  explosion.width = bg.tileSize.x;
+  explosion.height = bg.tileSize.y;
+  explosion.play();
+  explosion.loop = false;
+  explosion.onComplete = (function(){
+    this.parent.removeChild(this);
+  })
+  app.stage.addChild(explosion);
+  //TODO at this point, containers become complex,
+  // need a reference to containers
+  // do it like enums
+  this.parent.parent.removeChild(this.parent);
 }
+
 
 //generate texture
 function singleMenu(imgUrl, w,h){
