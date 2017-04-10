@@ -43,6 +43,17 @@ function createCharactor(id, imgUrl, hexPosition, gameMap){
   return charactor;
 }
 
+function removeCharactorFromMap(hex,map){
+  map.get([hex.q,hex.r]).charactor = {};
+}
+
+function drawMoveRange(rangeColor,charactor){
+  var range = new PIXI.Graphics();
+  range.alpha = 0.2;
+  bg.drawRange(range,this.moveRange,rangeColor,rangeColor)
+  rangeContainer.addChild(range);
+  charactor.rangeGraphics = range;
+}
 
 function onDragStart(event){
     this.data = event.data;
@@ -51,10 +62,7 @@ function onDragStart(event){
     this.originHexPos = this.hexPos;
 
     //so that it can still move back to it's origin place
-    var removePos = this.originHexPos;
-    var tileItems = this.gameMap.get([removePos.q,removePos.r]);
-    tileItems.charactor = {};
-
+    removeCharactorFromMap(this.originHexPos);
 
     //calculate place can go to
     //return [[q,r]..]
@@ -64,12 +72,7 @@ function onDragStart(event){
     this.moveCosts = costs;
 
     //draw range
-    var rangeColor = 0xb9c170;
-    var range = new PIXI.Graphics();
-    range.alpha = 0.2;
-    bg.drawRange(range,this.moveRange,rangeColor,rangeColor)
-    rangeContainer.addChild(range);
-    this.rangeGraphics = range;
+    drawMoveRange(0xb9c170,this);
 }
 
 function onDragging(){
@@ -99,22 +102,21 @@ function onDragEnd(){
 
     // update map
     //add new position
-    var gameMap = this.gameMap;
-    this.originHexPos = null;
-    var tileItems = gameMap.get(posKey)
-    tileItems.charactor = this;
+    var tileItems = gameMap.get(posKey).charactor = this;
 
     //draw menu
-    actionMenu.createActionMenu(posKey,gameMap);
+    actionMenu.createActionMenu(posKey,this.gameMap);
 
     //reset stuff
+    this.originHexPos = null;
     this.alpha = 1;
     this.dragging = false;
     this.data = null;
-    rangeContainer.removeChild(this.rangeGraphics);
-    this.rangeGraphics = null;
     this.moveRange = null;
     this.moveCosts = null;
+    rangeContainer.removeChild(this.rangeGraphics);
+    this.rangeGraphics.destroy();
+    this.rangeGraphics = null;
 
   }
 }
