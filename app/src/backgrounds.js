@@ -1,10 +1,12 @@
 var lib = require('./lib');
 var HashMap = require('hashmap/hashmap');
 var bgEnum = require('./enums').bgEnum;
+var mainContainter = require('./containers').mainContainter
 var canvasSize = {w:800,h:600}
 
 //initialise the app
 var app = new PIXI.Application(canvasSize.w, canvasSize.h, { antialias: true });
+app.stage.addChild(mainContainter)
 
 // layout of the map
 var tileSize = lib.Point(30,30);

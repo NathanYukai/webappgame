@@ -3,6 +3,8 @@ var bg = require('./backgrounds');
 var mov = require('./movement');
 var _ = require('underscore');
 var actionMenu = require('./actionMenu');
+var mainContainter = require('./containers').mainContainter;
+var rangeContainer = require('./containers').rangeContainer;
 
 //position should be Hex position
 function createCharactor(id, imgUrl, hexPosition, gameMap){
@@ -63,11 +65,11 @@ function onDragStart(event){
 
     //draw range
     var rangeColor = 0xb9c170;
-    var tmpGraphics = new PIXI.Graphics();
-    tmpGraphics.alpha = 0.2;
-    bg.drawRange(tmpGraphics,this.moveRange,rangeColor,rangeColor)
-    bg.app.stage.addChild(tmpGraphics);
-    this.rangeGraphics = tmpGraphics;
+    var range = new PIXI.Graphics();
+    range.alpha = 0.2;
+    bg.drawRange(range,this.moveRange,rangeColor,rangeColor)
+    rangeContainer.addChild(range);
+    this.rangeGraphics = range;
 }
 
 function onDragging(){
@@ -105,12 +107,11 @@ function onDragEnd(){
     //draw menu
     actionMenu.createActionMenu(posKey,gameMap);
 
-
     //reset stuff
     this.alpha = 1;
     this.dragging = false;
     this.data = null;
-    bg.app.stage.removeChild(this.rangeGraphics);
+    rangeContainer.removeChild(this.rangeGraphics);
     this.rangeGraphics = null;
     this.moveRange = null;
     this.moveCosts = null;
