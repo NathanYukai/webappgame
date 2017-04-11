@@ -1,9 +1,8 @@
 var bg = require('./backgrounds');
 var lib = require('./lib');
 
-function createEnemy(id, imgUrl, hexPosition, gameMap){
+function createEnemy(id, imgUrl, hexPosition){
     var enemy = new PIXI.Sprite.fromImage(imgUrl);
-    enemy.gameMap = gameMap;
     enemy.hexPos = hexPosition;
     enemy.id = id;
     enemy.anchor.set(0.5,0.6);

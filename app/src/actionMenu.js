@@ -8,8 +8,9 @@ var menuContainer = require('./containers').menuContainer;
 var tileDisplayContainer = require('./containers').tileDisplayContainer;
 var mainContainter = require('./containers').mainContainter;
 var createExplosion = require('./attackAnime/explosion').createExplosion;
+var gameMap = bg.gameMap;
 
-function createActionMenu(posKey,gameMap){
+function createActionMenu(posKey){
   var charactor = gameMap.get(posKey).charactor;
   var lineColor = 0x445762;
   var fillColor = 0xEDE3DE;
@@ -24,7 +25,6 @@ function createActionMenu(posKey,gameMap){
   attackMenu.x = charactor.x+20;
   attackMenu.y = charactor.y-10;
   attackMenu.charactor = charactor;
-  attackMenu.gameMap = gameMap;
   attackMenu.color = 0xdf3e16;
   attackMenu.on('pointerdown',attackRange);
 
@@ -33,7 +33,6 @@ function createActionMenu(posKey,gameMap){
 
 //get Range from charactor,
 //draw range,
-// later need to parse gamemap
 function attackRange(){
   var charactor = this.charactor;
 

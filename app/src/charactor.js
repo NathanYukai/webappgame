@@ -5,16 +5,16 @@ var _ = require('underscore');
 var actionMenu = require('./actionMenu');
 var mainContainter = require('./containers').mainContainter;
 var rangeContainer = require('./containers').rangeContainer;
+var gameMap = bg.gameMap;
 
 //position should be Hex position
-function createCharactor(id, imgUrl, hexPosition, gameMap){
+function createCharactor(id, imgUrl, hexPosition){
   var charactor = new PIXI.Sprite.fromImage(imgUrl);
   charactor.interactive = true;
   charactor.anchor.set(0.5,0.7);
 
   //lib Hex
   charactor.hexPos = hexPosition;
-  charactor.gameMap = gameMap;
   charactor.id = id;
   //add to map
   var tileItems = gameMap.get([hexPosition.q,hexPosition.r])
@@ -43,14 +43,14 @@ function createCharactor(id, imgUrl, hexPosition, gameMap){
   return charactor;
 }
 
-function removeCharactorFromMap(hex,map){
-  map.get([hex.q,hex.r]).charactor = {};
+function removeCharactorFromMap(hex){
+  gameMap.get([hex.q,hex.r]).charactor = {};
 }
 
 function drawMoveRange(rangeColor,charactor){
   var range = new PIXI.Graphics();
   range.alpha = 0.2;
-  bg.drawRange(range,this.moveRange,rangeColor,rangeColor)
+  bg.drawRange(range,charactor.moveRange,rangeColor,rangeColor)
   rangeContainer.addChild(range);
   charactor.rangeGraphics = range;
 }
@@ -66,7 +66,7 @@ function onDragStart(event){
 
     //calculate place can go to
     //return [[q,r]..]
-    var costs = mov.calculateCost(this.hexPos, this.gameMap, this.moveLeft);
+    var costs = mov.calculateCost(this.hexPos, gameMap, this.moveLeft);
     //[[q,r],...]
     this.moveRange = lib.getMapKeysToArray(costs);
     this.moveCosts = costs;
@@ -83,9 +83,9 @@ function onDragging(){
 
     var pos = [hexPos.q,hexPos.r];
     // update position if in range,
-    // and no charactor in this tile
+    // also if no charactor in this tile
     if(lib.arrayContainArray(pos, this.moveRange)
-  && (_.isEqual(this.gameMap.get(pos).charactor,{})) ){
+  && (_.isEqual(gameMap.get(pos).charactor,{})) ){
       this.x = tiledPos.x;
       this.y = tiledPos.y;
       this.hexPos = hexPos;
@@ -95,6 +95,7 @@ function onDragging(){
 
 function onDragEnd(){
   if(this.dragging){
+
     var posKey = [this.hexPos.q,this.hexPos.r];
 
     this.moveLeft = Math.max(0,
@@ -105,7 +106,7 @@ function onDragEnd(){
     var tileItems = gameMap.get(posKey).charactor = this;
 
     //draw menu
-    actionMenu.createActionMenu(posKey,this.gameMap);
+    actionMenu.createActionMenu(posKey);
 
     //reset stuff
     this.originHexPos = null;

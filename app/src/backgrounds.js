@@ -7,6 +7,7 @@ var canvasSize = {w:800,h:600}
 //initialise the app
 var app = new PIXI.Application(canvasSize.w, canvasSize.h, { antialias: true });
 app.stage.addChild(mainContainter)
+var gameMap = generateHexagonMap(5);
 
 // layout of the map
 var tileSize = lib.Point(30,30);
@@ -99,3 +100,4 @@ exports.tileSize = tileSize;
 exports.app = app;
 exports.drawRange = drawRange;
 exports.canvasSize = canvasSize;
+exports.gameMap = gameMap;
