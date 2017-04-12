@@ -35,10 +35,27 @@ function createCharactor(id, imgUrl, hexPosition){
   //move limit
   charactor.moveLimit = 4;
   charactor.moveLeft = charactor.moveLimit;
-
   //attack range
   //[Hex]
   charactor.attackRange = lib.hex_directions;
+
+//functions for charactor class
+  charactor.updateMoveLeft = function(){
+    this.moveLeft = Math.max(0,
+      this.moveLeft - this.moveCosts[[this.hexPos.q,this.hexPos.r]]);
+  }
+
+  charactor.clearDraggingField = function(){
+    this.originHexPos = null;
+    this.alpha = 1;
+    this.dragging = false;
+    this.data = null;
+    this.moveRange = null;
+    this.moveCosts = null;
+    rangeContainer.removeChild(this.rangeGraphics);
+    this.rangeGraphics.destroy();
+    this.rangeGraphics = null;
+  }
 
   return charactor;
 }
@@ -96,29 +113,16 @@ function onDragging(){
 function onDragEnd(){
   if(this.dragging){
 
-    var posKey = [this.hexPos.q,this.hexPos.r];
-
-    this.moveLeft = Math.max(0,
-      this.moveLeft - this.moveCosts[posKey]);
-
+    this.updateMoveLeft();
     // update map
     //add new position
+    var posKey = [this.hexPos.q,this.hexPos.r];
     var tileItems = gameMap.get(posKey).charactor = this;
 
     //draw menu
     actionMenu.createActionMenu(posKey);
 
-    //reset stuff
-    this.originHexPos = null;
-    this.alpha = 1;
-    this.dragging = false;
-    this.data = null;
-    this.moveRange = null;
-    this.moveCosts = null;
-    rangeContainer.removeChild(this.rangeGraphics);
-    this.rangeGraphics.destroy();
-    this.rangeGraphics = null;
-
+    this.clearDraggingField();
   }
 }
 

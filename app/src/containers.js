@@ -1,19 +1,25 @@
 var app = require('./backgrounds');
+
 var mainContainter = new PIXI.Container();
+//attack, cancel menu , and hidden listener
 var menuContainer = new PIXI.Container();
+//display move range
 var rangeContainer = new PIXI.Container();
+//actual things on the map
 var tileDisplayContainer = new PIXI.Container();
+//bg , blocks, slow areas etc
 var bgContainer = new PIXI.Container();
 
-// this is dirty fix to listening click outside of things but I can't come up with a better solution
-// may cause issues, later, careful with the z depth
+//only hold one attack range, only used by menucontainer
+var attackRangeContainer = new PIXI.Container();
+
 mainContainter.addChild(bgContainer);
 mainContainter.addChild(tileDisplayContainer);
 mainContainter.addChild(rangeContainer);
-mainContainter.addChild(menuContainer);
 
 exports.mainContainter = mainContainter;
 exports.menuContainer = menuContainer;
 exports.tileDisplayContainer = tileDisplayContainer;
 exports.rangeContainer = rangeContainer;
 exports.bgContainer = bgContainer;
+exports.attackRangeContainer = attackRangeContainer;
