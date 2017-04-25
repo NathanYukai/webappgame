@@ -2,7 +2,7 @@ var lib = require('./lib');
 var HashMap = require('hashmap/hashmap');
 var bgEnum = require('./enums').bgEnum;
 var mainContainter = require('./containers').mainContainter
-var canvasSize = {w:800,h:600}
+var canvasSize = {w:1200,h:1000}
 
 //initialise the app
 var app = new PIXI.Application(canvasSize.w, canvasSize.h, { antialias: true });
@@ -10,8 +10,8 @@ app.stage.addChild(mainContainter)
 var gameMap = generateHexagonMap(5);
 
 // layout of the map
-var tileSize = lib.Point(30,30);
-var origin = lib.Point(350,300);
+var tileSize = lib.Point(40,40);
+var origin = lib.Point(450,400);
 var layout_p = lib.Layout(lib.layout_pointy,tileSize,origin);
 
 var lineColor = 0x67d5ff;

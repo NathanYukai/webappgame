@@ -5,13 +5,16 @@ var _ = require('underscore');
 var actionMenu = require('./actionMenu');
 var mainContainter = require('./containers').mainContainter;
 var rangeContainer = require('./containers').rangeContainer;
+var drawHealthBar = require('./UI').drawHealthBar;
 var gameMap = bg.gameMap;
 
 //position should be Hex position
-function createCharactor(id, imgUrl, hexPosition){
+function createCharactor(id, imgUrl, hexPosition, info){
   var charactor = new PIXI.Sprite.fromImage(imgUrl);
   charactor.interactive = true;
   charactor.anchor.set(0.5,0.7);
+  charactor.fight_info = info
+  charactor.current_info = {health:info.hitpoint};
 
   //lib Hex
   charactor.hexPos = hexPosition;
@@ -33,11 +36,20 @@ function createCharactor(id, imgUrl, hexPosition){
     .on('pointermove',onDragging);
 
   //move limit
-  charactor.moveLimit = 4;
+  charactor.moveLimit = info.movementPoint;
   charactor.moveLeft = charactor.moveLimit;
   //attack range
   //[Hex]
   charactor.attackRange = lib.hex_directions;
+
+
+//draw UI
+  charactor.UI = new PIXI.Container()
+  healthBar = drawHealthBar(1);
+  charactor.addChild(charactor.UI)
+  charactor.UI.addChild(healthBar);
+
+  reDrawHealth(charactor,0.2);
 
 //functions for charactor class
   charactor.updateMoveLeft = function(){
@@ -58,6 +70,12 @@ function createCharactor(id, imgUrl, hexPosition){
   }
 
   return charactor;
+}
+
+function reDrawHealth(charactor,percent){
+  bar = charactor.UI.getChildAt(0)
+  bar.height = bg.tileSize.y*percent;
+  bar.y = (bg.tileSize.y-bar.height)/2;
 }
 
 function removeCharactorFromMap(hex){
